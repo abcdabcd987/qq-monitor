@@ -3,6 +3,9 @@ qq-monitor
 
 Watch somebody's network status on QQ and send it to a server.
 
+## 中文说明 ##
+见 V2EX: <http://www.v2ex.com/t/121272>
+
 ## How it works? ##
 
 *QQ for Android* and *QQ for iOS* can display users' network status now, for example, using *2G* or using *Wi-Fi*. And my way to watch a certain user's network status is to use an Android emulator running QQ.
