@@ -49,10 +49,10 @@ function render_person($person_name, $colors, $events) {
 <h2><?php echo htmlspecialchars($person_name); ?></h2>
 <table class="table">
 <caption><button class="toggle">Table</button></caption>
-<thead>
+<thead style="display: none;">
 <tr><td>date</td><td>start</td><td>end</td><td>result</td></tr>
 </thead>
-<tbody>
+<tbody style="display: none;">
 <?php
 foreach ($events as $event) {
   echo "<tr><td>" . $event['date'] . "</td><td>" . $event['start'] . "</td><td>" . $event['end'] . "</td><td>" . $event['result']. "</td></tr>" . PHP_EOL;
@@ -168,9 +168,6 @@ EOF;
   color: #fff;
   text-align: right;
 }
-.table thead, .table tbody {
-  display: none;
-}
 .color1 { background-color: #5cb85c; }
 .color2 { background-color: #5bc0de; }
 .color3 { background-color: #f0ad4e; }
@@ -191,7 +188,7 @@ while ($person_row = $people->fetchArray(SQLITE3_ASSOC)) {
 <script>
 function toggle_visibility(x) {
   if (x.style.display === 'none') {
-    x.style.display = 'block';
+    x.style.display = 'table-row-group';
   } else {
     x.style.display = 'none';
   }
