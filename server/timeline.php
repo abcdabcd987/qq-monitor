@@ -1,84 +1,54 @@
 <?php
 require_once('auth.php');
-
 $db = new SQLite3('monitor.db');
-$results = $db->query('SELECT * FROM record ORDER BY id DESC');
 
-$colors = array();
-$events = array();
-$last_date = 'yyyy-mm-dd';
-$last_result = '<empty>';
-while ($row = $results->fetchArray(SQLITE3_ASSOC)) {
-  $now_date = substr($row['time'], 0, 10);
-  $now_result = $row['result'];
-  $now_time = substr($row['time'], 11, 8);
-  if ($last_date != $now_date || $last_result != $now_result) {
-    $events[] = array(
-      'date'   => $now_date,
-      'result' => htmlspecialchars($now_result),
-      'start'  => $now_time,
-      'end'    => $now_time
-    );
-    if ($last_date != $now_date && $last_result == $now_result) {
-      $events[count($events)-1]['end'] = '23:59:59';
-      $events[count($events)-2]['start'] = '00:00:00';
+function print_person($person_name) {
+  global $db;
+  $stmt = $db->prepare('SELECT * FROM record WHERE person=? ORDER BY id DESC');
+  $stmt->bindParam(1, $person_name, SQLITE3_TEXT);
+  $results = $stmt->execute();
+
+  $colors = array();
+  $events = array();
+  $last_date = 'yyyy-mm-dd';
+  $last_result = '<empty>';
+  while ($row = $results->fetchArray(SQLITE3_ASSOC)) {
+    $now_date = substr($row['time'], 0, 10);
+    $now_result = $row['result'];
+    $now_time = substr($row['time'], 11, 8);
+    if ($last_date != $now_date || $last_result != $now_result) {
+      $events[] = array(
+        'date'   => $now_date,
+        'result' => htmlspecialchars($now_result),
+        'start'  => $now_time,
+        'end'    => $now_time
+      );
+      if ($last_date != $now_date && $last_result == $now_result) {
+        $events[count($events)-1]['end'] = '23:59:59';
+        $events[count($events)-2]['start'] = '00:00:00';
+      }
+    } else {
+      $events[count($events)-1]['start'] = $now_time;
     }
-  } else {
-    $events[count($events)-1]['start'] = $now_time;
+
+    $last_date = $now_date;
+    $last_result = $now_result;
+    if (!array_key_exists($now_result, $colors)) {
+      $cnt = count($colors)+1;
+      $color = "color$cnt";
+      $colors[$now_result] = $color;
+    }
   }
 
-  $last_date = $now_date;
-  $last_result = $now_result;
-  if (!array_key_exists($now_result, $colors)) {
-    $cnt = count($colors)+1;
-    $color = "color$cnt";
-    $colors[$now_result] = $color;
-  }
+  render_person($person_name, $colors, $events);
 }
-?><!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Timeline - Monitor</title>
-<style>
-.day {
-  height: 1em;
-  margin-bottom: 0;
-}
-.day span {
-  float: left;
-  margin-right: 1em;
-  line-height: 1em;
-}
-.bars {
-  height: 100%;
-  overflow: hidden;
-  background-color: #f5f5f5
-}
-.bar {
-  float: left;
-  height: 100%;
-}
-#tooltip {
-  position: fixed;
-  right: 0;
-  top: 0;
-  background-color: #000;
-  color: #fff;
-  text-align: right;
-}
-.color1 { background-color: #5cb85c; }
-.color2 { background-color: #5bc0de; }
-.color3 { background-color: #f0ad4e; }
-.color4 { background-color: #d9534f; }
-* { font-family: monospace; }
-thead { font-weight: bold; }
-</style>
-</head>
-<body>
-<h1>Timeline</h1>
-<table id="table">
+
+function render_person($person_name, $colors, $events) {
+?>
+<hr>
+<h2><?php echo htmlspecialchars($person_name); ?></h2>
+<table class="table">
+<caption><button class="toggle">Table</button></caption>
 <thead>
 <tr><td>date</td><td>start</td><td>end</td><td>result</td></tr>
 </thead>
@@ -90,7 +60,7 @@ foreach ($events as $event) {
 ?>
 </tbody>
 </table>
-<div id="timeline">
+<div class="timeline">
 <?php
 $last_date = 'yyyy-mm-dd';
 $tot_sec = 60*60*24;
@@ -133,9 +103,9 @@ EOF;
   }
 
   if ($last_sec != $st_sec) {
-    $percent = ($st_sec-$last_sec)*100.0/$tot_sec;
+    $percent = sprintf("%9.5f", ($st_sec-$last_sec)*100.0/$tot_sec);
     echo <<<EOF
-      <div class="bar" style="width: $percent%" title="Interval"></div>
+      <div class="bar"        style="width: $percent%" title="Interval"></div>
 
 EOF;
   }
@@ -144,9 +114,9 @@ EOF;
   $ed = $event['end'];
   $result = $event['result'];
   $color = $colors[$result];
-  $percent = $dur_sec*100/$tot_sec;
+  $percent = sprintf("%9.5f", $dur_sec*100/$tot_sec);
   echo <<<EOF
-      <div class="bar $color" title="[$st - $ed] $result" style="width: $percent%"></div>
+      <div class="bar $color" style="width: $percent%" title="[$st - $ed] $result"></div>
 
 EOF;
   
@@ -163,8 +133,69 @@ EOF;
 }
 ?>
 </div>
+<?php
+}
+?> <!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Timeline - Monitor</title>
+<style>
+.day {
+  height: 1em;
+  margin-bottom: 0;
+}
+.day span {
+  float: left;
+  margin-right: 1em;
+  line-height: 1em;
+}
+.bars {
+  height: 100%;
+  overflow: hidden;
+  background-color: #f5f5f5
+}
+.bar {
+  float: left;
+  height: 100%;
+}
+#tooltip {
+  position: fixed;
+  right: 0;
+  top: 0;
+  background-color: #000;
+  color: #fff;
+  text-align: right;
+}
+.table thead, .table tbody {
+  display: none;
+}
+.color1 { background-color: #5cb85c; }
+.color2 { background-color: #5bc0de; }
+.color3 { background-color: #f0ad4e; }
+.color4 { background-color: #d9534f; }
+* { font-family: monospace; }
+thead { font-weight: bold; }
+</style>
+</head>
+<body>
+<h1>Timeline</h1>
+<?php
+$people = $db->query('SELECT DISTINCT person FROM image');
+while ($person_row = $people->fetchArray(SQLITE3_ASSOC)) {
+  print_person($person_row['person']);
+}
+?>
 <p id="tooltip"></p>
 <script>
+function toggle_visibility(x) {
+  if (x.style.display === 'none') {
+    x.style.display = 'block';
+  } else {
+    x.style.display = 'none';
+  }
+}
 window.onload = function() {
   var elements = document.getElementsByClassName('bar');
   var tooltip = document.getElementById('tooltip');
@@ -174,6 +205,15 @@ window.onload = function() {
     });
     elements[i].addEventListener('mouseout', function() {
       tooltip.innerHTML = '';
+    });
+  }
+
+  var toggles = document.getElementsByClassName('toggle');
+  for (var i = 0; i < toggles.length; ++i) {
+    toggles[i].addEventListener('click', function() {
+      var table = this.parentNode.parentNode;
+      toggle_visibility(table.getElementsByTagName('thead')[0]);
+      toggle_visibility(table.getElementsByTagName('tbody')[0]);
     });
   }
 };

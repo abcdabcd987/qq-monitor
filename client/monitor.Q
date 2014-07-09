@@ -23,40 +23,48 @@ SetupOCXFile=
 [Comment]
 
 [Script]
-Rem Start
-Rem 切换至BlueStacks
+Sub 刷新()
+    Plugin.Window.Move BlueStacks,0,0
+    Call Lib.API.激活窗口并置前(BlueStacks)
+    Delay 500
+    MoveTo 230,444
+    LeftDown 1
+    Delay 200
+    MoveTo 230,544
+    Delay 200
+    MoveTo 230,644
+    Delay 200
+    MoveTo 230,744
+    Delay 200
+    MoveTo 230,844
+    Delay 1000
+    LeftUp 1
+    Delay 3000
+End Sub
+Sub 监控(搜索列表X, 搜索列表Y, 截图路径)
+    MoveTo 271,143
+    Delay 200
+    LeftClick 1
+    Delay 3000
+    MoveTo 搜索列表X, 搜索列表Y
+    Delay 200
+    LeftClick 1
+    Delay 1000
+    Plugin.Pic.PrintScreen 153, 76, 391, 120, 截图路径
+    Delay 300
+    RunApp "C:\Users\abcdabcd987\Desktop\monitor_upload.bat """&截图路径&""""
+    Delay 300
+    Call Lib.API.激活窗口并置前(BlueStacks)
+    MoveTo 46,103
+    Delay 200
+    LeftClick 1
+    Delay 1000
+End Sub
 BlueStacks = lib.API.查找窗口句柄("WindowsForms10.Window.8.app.0.ea7f4a_r11_ad1", "BlueStacks App Player")
-Call Lib.API.激活窗口并置前(BlueStacks)
-Delay 500
-Rem 【消息】面板下拉刷新
-MoveTo 800, 400
-Delay 200
-LeftDown 1
-Delay 200
-MoveTo 800, 500
-Delay 200
-MoveTo 800, 600
-Delay 1000
-LeftUp 1
-Delay 3000
-Rem 【消息】面板【搜索】
-MoveTo 800, 190
-Delay 200
-LeftClick 1
-Delay 3000
-MoveTo 800, 270
-Delay 200
-LeftClick 1
-Delay 1000
-Rem 截图
-Plugin.Pic.PrintScreen 800,120,1050,162,"C:\Users\abcdabcd987\Desktop\monitor.jpg"
-Rem 上传
-RunApp "C:\Users\abcdabcd987\Desktop\monitor_upload.bat"
-Delay 5000
-Rem 切换到【消息】面板
-Call Lib.API.激活窗口并置前(BlueStacks)
-MoveTo 165, 150
-LeftClick 1
-Rem 结束
-Delay 60000
+Rem Start
+Call 刷新()
+Call 监控(178, 231, "C:\Users\abcdabcd987\Desktop\monitor1.jpg")
+Call 监控(178, 277, "C:\Users\abcdabcd987\Desktop\monitor2.jpg")
+Call 监控(178, 338, "C:\Users\abcdabcd987\Desktop\monitor3.jpg")
+Delay 55000
 Goto Start

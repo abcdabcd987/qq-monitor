@@ -17,17 +17,23 @@ exit;
 $db = new SQLite3('monitor.db');
 
 $hashed = sha1_file($_FILES['file']['tmp_name']);
-$row = $db->query("SELECT id, result FROM image WHERE hash = '$hashed';")->fetchArray();
+$row = $db->query("SELECT id, person, result FROM image WHERE hash = '$hashed';")->fetchArray();
 if (!$row) {
-    $db->exec("INSERT INTO image (hash, result) VALUES ('$hashed', '<unnamed>');");
+    $db->exec("INSERT INTO image (hash, person, result) VALUES ('$hashed', '<unnamed>', '<unnamed>');");
     $imgid = $db->lastInsertRowID();
+    $imgprs = '<unnamed>';
     $imgres = '<unnamed>';
     move_uploaded_file($_FILES['file']['tmp_name'], "image/$hashed.jpg");
 } else {
     $imgid = $row['id'];
+    $imgprs = $row['person'];
     $imgres = $row['result'];
 }
-$db->exec("INSERT INTO record (image, result) VALUES ($imgid, '$imgres');");
+$stmt = $db->prepare("INSERT INTO record (image, person, result) VALUES (?, ?, ?);");
+$stmt->bindParam(1, $imgid, SQLITE3_INTEGER);
+$stmt->bindParam(2, $imgprs, SQLITE3_TEXT);
+$stmt->bindParam(3, $imgres, SQLITE3_TEXT);
+if (!$stmt->execute()) die('INSERT fail');
 echo "Upload Success";
 ?>
 </pre>
